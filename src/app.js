@@ -14,6 +14,8 @@ const queryAsync=(sql, values = []) => {
 }
 
 
+//Filme
+
 app.get('/', (req,res) => {
     res.send("API CINEMA")
 })
@@ -212,5 +214,210 @@ app.delete('/filme/:id', async (req,res) => {
        }) 
     }
 })
+
+//-------------------------------------------------------------------------------------------------------------------------------------
+
+//Salas
+
+app.get('/', (req,res) => {
+    res.send("API CINEMA")
+})
+
+app.get('/salas', async(req,res) => {
+    try{
+        const salas = await queryAsync('SELECT * FROM salas')
+
+        res.json({
+            sucesso: true,
+            dados: salas,
+            total: salas.length  
+        })
+    } catch(erro) {
+        console.error('Erro ao listar salas:', erro)
+        res.status(500).json({sucesso: false,
+            mensagem: 'Erro ao listar salas',
+            erro: erro.message
+        })
+            
+    }
+    })
+
+app.get('/salas/:id', async (req,res) => {
+    try{
+        const {id} = req.params
+
+        if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID das salas'
+            })
+        }
+
+        const salas = await queryAsync('SELECT * FROM salas WHERE id = ?', [id])
+
+        if(salas.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sala não encontrada pelo seu ID'
+            })
+
+        }
+        res.json({
+            sucesso: true,
+            dados: salas[0]
+        })
+
+    } catch (erro) {
+        console.error('Erro ao encontrar as Salas:', erro)
+        res.status(500).json({sucesso: false,
+            mensagem: 'Erro ao encontrar as Salas',
+            erro: erro.message
+        })
+
+    }
+})
+
+app.post('/salas', async (req,res) => {
+    try {
+       const {id, qtd_poltronas, sala_vip, acessibilidade, cap_pessoas} = req.body
+       
+       if(id || !acessibilidade || !sala_vip){
+        return res.status(400).json({
+            sucesso: false,
+            mensagem: 'Título, genêro e duração são obrigatórios'
+        })
+       }
+
+       if(typeof qtd_poltronas !== 'number' || qtd_poltronas <= 0){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'A quantidade de poltronas para cada pessoas tende a ser positivo'
+            })
+       }
+
+       const novaSalas = {
+        id: id.trim(),
+        qtd_poltronas: qtd_poltronas.trim(),
+        cap_pessoas,
+        acessibilidade: acessibilidade || null,
+        sala_vip: sala_vip || null,
+       }
+
+       const resultado = await queryAsync('INSERT INTO salas SET ?', [novaSalas])
+
+       res.status(201).json({
+        sucesso: true,
+        mensagem: 'Sala cadastrada com sucesso',
+        id: resultado.insertId
+       })
+
+    } catch (erro) {
+       console.error('Erro ao cadastrar Sala nova', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao cadastrar Sala nova',
+        erro: erro.message
+       })
+    }
+})
+
+app.put('/salas', async (req,res) => {
+    try {
+        const{id, qtd_poltronas, sala_vip, acessibilidade, cap_pessoas} = req.body
+
+        if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID da Sala está inválido'
+            })
+        }
+
+        const salaExistente = await queryAsync ('SELECT * FROM salas WHERE id = ?', [id])
+
+        if(salaExistente.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sala específica não encontrada'
+            })
+        }
+
+        const salaAtualizada = {}
+
+        if(id !== undefined) filmeAtualizado.id = id.trim()
+        if(qtd_poltronas !== undefined) filmeAtualizado.qtd_poltronas = qtd_poltronas.trim()
+        if(sala_vip !== undefined) {
+            if(typeof sala_vip !== 'number || salaDisponível <= 0'){
+                return res.status(400).json({
+                    sucesso: false,
+                    mensagem: 'Salas Vips disponíveis abaixo de 0 (positivo)'
+                })
+            }
+            salaAtualizada.sala_vip = sala_vip
+        }
+        if(acessibilidade !== undefined) filmeAtualizado.acessibilidade = acessibilidade
+        if(qtd_poltronas !== undefined) filmeAtualizado.qtd_poltronas =   qtd_poltronas
+
+        if(Object.keys(salaAtualizada).length === 0){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Nenhum campo para atualizar'
+            })
+        }
+
+        await queryAsync('UPDATE sala SET ? WHERE id= ?', [salaAtualizada, id])
+        res.json({
+            sucesso: true,
+            mensagem: 'Salas Atualizadas'
+        })
+        
+    } catch (erro) {
+         console.error('Erro ao atualizar as salas', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao atualizar as salas',
+        erro: erro.message
+       })
+    }
+})
+
+app.delete('/salas', async (req,res) => {
+    try {
+        const{id} = req.params
+         if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID sala inválido'
+            })
+        }
+
+        const salaExistente = await queryAsync ('SELECT * FROM sala WHERE id = ?', [id])
+
+        if(salaExistente.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sala específica não encontrada'
+            })
+        }
+
+        await queryAsync('DELETE FROM salas WHERE id = ?', [id])
+        res.status(200).json({
+            sucesso: true,
+            mensagem: 'ID da sala apagada'
+        })
+    } catch (erro) {
+       console.error('Erro ao apagar ID da sala', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Sala inexistente',
+        erro: erro.message
+       }) 
+    }
+})
+
+
+
 
 module.exports = app
