@@ -612,6 +612,203 @@ app.delete('/sessao', async (req,res) => {
     }
 })
 
+//-----------------------------------------------
+//Ingresso
+
+app.get('/ingresso', async(req,res) => {
+    try{
+        const ingresso = await queryAsync('SELECT * FROM ingresso')
+
+        res.json({
+            sucesso: true,
+            dados: ingresso,
+            total: ingresso.length  
+        })
+    } catch(erro) {
+        console.error('Erro ao listar ingresso:', erro)
+        res.status(500).json({sucesso: false,
+            mensagem: 'Erro ao listar ingresso',
+            erro: erro.message
+        })
+            
+    }
+    })
+
+app.get('/ingresso/:id', async (req,res) => {
+    try{
+        const {id} = req.params
+
+        if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID dos ingressos'
+            })
+        }
+
+        const sessao = await queryAsync('SELECT * FROM ingresso WHERE id = ?', [id])
+
+        if(sessao.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Ingresso não encontrado pelo seu ID'
+            })
+
+        }
+        res.json({
+            sucesso: true,
+            dados: ingresso[0]
+        })
+
+    } catch (erro) {
+        console.error('Erro ao encontrar as Ingresso:', erro)
+        res.status(500).json({sucesso: false,
+            mensagem: 'Erro ao encontrar as Ingresso',
+            erro: erro.message
+        })
+
+    }
+})
+
+app.post('/ingresso', async (req,res) => {
+    try {
+       const {id, sessao_id, numero_assento, tipo, valor_pago} = req.body
+       
+       if(id || !sessao_id || !numero_assento){
+        return res.status(400).json({
+            sucesso: false,
+            mensagem: 'Sessao_id, numero_assento são obrigatórios'
+        })
+       }
+
+       if(typeof sessao_id !== 'number' || sessao_id <= 0){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'O id do ingresso deve sempre ser positivo'
+            })
+       }
+
+       const novoIngresso = {
+        id: id.trim(),
+        sessao_id: senssao_id.trim(),
+        numero_assento,
+        tipo: tipo || null,
+        valor_pago: valor_pago || null,
+       }
+
+       const resultado = await queryAsync('INSERT INTO ingresso SET ?', [novoIngresso])
+
+       res.status(201).json({
+        sucesso: true,
+        mensagem: 'Ingresso cadastrada com sucesso',
+        id: resultado.insertId
+       })
+
+    } catch (erro) {
+       console.error('Erro ao cadastrar Ingresso novo', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao cadastrar Ingresso novo',
+        erro: erro.message
+       })
+    }
+})
+
+app.put('/ingresso', async (req,res) => {
+    try {
+        const{id, sessao_id, numero_assento, tipo, valor_pago} = req.body
+
+        if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID do Ingresso está inválido'
+            })
+        }
+
+        const ingressoExistente = await queryAsync ('SELECT * FROM ingresso WHERE id = ?', [id])
+
+        if(ingressoExistente.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Ingresso específico não encontrado'
+            })
+        }
+
+        const ingressoAtualizada = {}
+
+        if(id !== undefined) ingressoAtualizada.id = id.trim()
+        if(filme_id !== undefined) ingressoAtualizado.filme_id = sessao_id.trim()
+        if(sessao_id !== undefined) {
+            if(typeof sessao_id !== 'number || sessaoDisponível <= 0'){
+                return res.status(400).json({
+                    sucesso: false,
+                    mensagem: 'Ingressos disponíveis abaixo de 0 (positivo)'
+                })
+            }
+            ingressoAtualizada.sessao_id = sessao_id
+        }
+        if(numero_assento !== undefined) ingressoAtualizado.numero_assento = numero_assento
+        if(tipo !== undefined) ingressoAtualizado.tipo = tipo
+
+        if(Object.keys(ingressoAtualizada).length === 0){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Nenhum campo para atualizar'
+            })
+        }
+
+        await queryAsync('UPDATE sessao SET ? WHERE id= ?', [ingressoAtualizada, id])
+        res.json({
+            sucesso: true,
+            mensagem: 'Ingressos Atualizadas'
+        })
+        
+    } catch (erro) {
+         console.error('Erro ao atualizar as ingressos', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao atualizar as ingressos',
+        erro: erro.message
+       })
+    }
+})
+
+app.delete('/ingressos', async (req,res) => {
+    try {
+        const{id} = req.params
+         if(!id || isNaN(id)){
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID ingressos inválido'
+            })
+        }
+
+        const ingressoExistente = await queryAsync ('SELECT * FROM ingresso WHERE id = ?', [id])
+
+        if(ingressoExistente.length === 0){
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Ingresso específica não encontrada'
+            })
+        }
+
+        await queryAsync('DELETE FROM ingresso WHERE id = ?', [id])
+        res.status(200).json({
+            sucesso: true,
+            mensagem: 'ID da ingresso apagada'
+        })
+    } catch (erro) {
+       console.error('Erro ao apagar ID da ingresso', erro)
+       
+       res.status(500).json({
+        sucesso: false,
+        mensagem: 'Ingresso inexistente',
+        erro: erro.message
+       }) 
+    }
+})
+
 
 
 
