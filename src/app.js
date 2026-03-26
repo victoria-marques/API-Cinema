@@ -809,7 +809,4 @@ app.delete('/ingressos', async (req,res) => {
     }
 })
 
-
-
-
 module.exports = app
